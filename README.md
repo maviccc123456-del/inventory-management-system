@@ -1,129 +1,129 @@
 # Inventory Management System
 
-基于 Spring Boot 的进销存／库存管理 Web 应用，用于学习商品资料、进货、销售、退货及库存联动处理。
+A web application for managing products, suppliers, customers, purchases, sales, returns, and stock levels. It supports basic inventory workflows, searchable transaction records, and low-stock indicators.
 
-## 主要功能
+The application interface is in Chinese. This README provides an English overview and setup instructions.
 
-- 商品、供应商、客户资料管理。
-- 进货和销售记录的新增、修改、删除、条件查询及分页。
-- 进货退货、销售退货及库存数量联动。
-- 库存低于预警值时在首页显示提醒。
-- 用户、部门、角色、菜单和权限配置。
-- 个人资料、头像上传、密码修改、系统公告、登录日志和内存缓存管理。
+## Main Features
 
-以上为当前源码包含的功能，仍存在下文列出的已知限制。
+- **Product management:** Create, edit, delete, and search products; view stock quantities.
+- **Supplier and customer management:** Maintain and search business contact records.
+- **Purchases:** Record purchases, update purchase quantities, and filter records by supplier, product, and date.
+- **Sales:** Record sales, update sales quantities, and filter records by customer, product, and date.
+- **Returns:** Record purchase returns and sales returns with corresponding stock adjustments.
+- **Low-stock indicators:** Display products whose stock is below their configured threshold.
+- **Administration:** Manage users, departments, roles, menus, permission assignments, announcements, and login records.
+- **Supporting features:** Profile updates, password changes, image uploads, and in-memory cache management.
 
-## 技术栈
+## Technology Stack
 
-| 部分 | 技术 |
+| Layer | Technologies |
 | --- | --- |
-| 页面 | HTML、CSS、JavaScript、Layui 2.5.5、jQuery、Thymeleaf |
-| 后端 | Java 8、Spring Boot 2.2.1.RELEASE、Spring MVC |
-| 数据访问 | MyBatis-Plus 3.2.0、Druid 1.1.20 |
-| 认证与权限 | Apache Shiro 1.4.0 |
-| 数据库 | MySQL；原始数据库脚本来自 MySQL 5.7.9 |
-| 构建与接口文档 | Maven、Swagger 2 |
+| Backend | Java 8, Spring Boot 2.2.1.RELEASE, Spring MVC |
+| Frontend | HTML, CSS, JavaScript, Layui 2.5.5, jQuery |
+| Templates | Thymeleaf |
+| Data access | MyBatis-Plus 3.2.0, Druid 1.1.20 |
+| Authentication and permissions | Apache Shiro 1.4.0 |
+| Database | MySQL 5.7 |
+| Build and API documentation | Maven, Swagger 2 |
 
-应用由 Spring Boot 渲染页面，并通过 jQuery 请求业务接口。不是 React 项目，数据库也不是 PostgreSQL。
+Spring Boot renders the Thymeleaf pages, and the browser uses jQuery to call the application endpoints. Backend code is organized into controllers, services, mappers, and entities.
 
-## 本地运行
+Purchases and sales returns increase stock. Sales and purchase returns decrease stock. Editing purchase or sales quantities applies the difference to the current stock. The purchase service uses a Spring transaction for the stock update and purchase record save.
 
-### 1. 环境
+## Run Locally
 
-- JDK 8，确保 `JAVA_HOME` 指向有效的 JDK。
-- MySQL，建议先在兼容原脚本的 MySQL 5.7 环境中进行本地验证。
-- Maven，或者使用项目自带的 Maven Wrapper。
+### Requirements
 
-### 2. 初始化一个空的开发数据库
+- JDK 8 with `JAVA_HOME` configured
+- MySQL 5.7
+- Maven, or the included Maven Wrapper
 
-在 MySQL 客户端或 Navicat 中依次执行：
+The commands below use PowerShell and should be run from the project root.
 
-1. `database/schema.sql`：创建 `warhouse` 数据库及 15 张表。
-2. `database/seed-demo.sql`：导入菜单、权限、角色，以及一个新建的演示管理员。
+### 1. Initialize the database
 
-这两个脚本仅用于新的开发数据库，不要在已有业务数据库上重复执行。业务表初始为空，可通过页面录入测试数据。
+Open a MySQL client:
 
-原始 `sms.sql` 包含用户、客户、供应商等样例资料，保留在本地并通过 `.gitignore` 排除，仓库使用清理后的初始化脚本。
+```text
+mysql -u root -p
+```
 
-### 3. 配置
+Import the scripts in order:
 
-PowerShell：
+```sql
+SOURCE database/schema.sql;
+SOURCE database/seed-demo.sql;
+```
+
+You can also import them with a database client such as Navicat. The scripts create a development database named `warhouse` with 15 tables. Use a new development database, not an existing business database.
+
+The demo seed contains menus, permissions, roles, and a demo administrator. Business tables start empty; suppliers, customers, and products can be added through the application.
+
+### 2. Configure the application
+
+Copy the example files and set your own database credentials. If local configuration files already exist, review them before replacing them.
 
 ```powershell
 Copy-Item src/main/resources/application.example.yml src/main/resources/application.yml
 Copy-Item src/main/resources/file.example.properties src/main/resources/file.properties
 $env:DB_USERNAME = 'root'
-$env:DB_PASSWORD = '填写你自己的数据库密码'
+$env:DB_PASSWORD = 'YOUR_DATABASE_PASSWORD'
 ```
 
-如果本地已经有这两个配置文件，请先保留自己的配置，不要直接覆盖。`application.yml` 和 `file.properties` 不上传到 GitHub。
-
-可选环境变量：
-
-| 变量 | 用途 | 默认值 |
+| Environment variable | Purpose | Default |
 | --- | --- | --- |
-| `DB_URL` | MySQL JDBC 地址 | 本机 `3306` 端口的 `warhouse` 数据库 |
-| `DB_USERNAME` | 数据库用户 | `root` |
-| `DB_PASSWORD` | 数据库密码 | 空，需自行设置 |
-| `PORT` | HTTP 端口 | `8888` |
+| `DB_URL` | MySQL JDBC connection URL | Local `warhouse` database on port `3306` |
+| `DB_USERNAME` | Database username | `root` |
+| `DB_PASSWORD` | Database password | Empty; set your own value |
+| `PORT` | HTTP port | `8888` |
 
-上传目录通过 `file.properties` 中的 `filepath` 设置；示例为 `./uploads/`。原始样例商品图片不随仓库提供。
+Set the image upload directory using `filepath` in `file.properties`. The example uses `./uploads/`, relative to the working directory.
 
-### 4. 启动
+### 3. Start the application
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-也可使用已安装的 Maven：
+If Maven is installed, you can use `mvn spring-boot:run`. The first run requires an internet connection to download dependencies.
 
-```powershell
-mvn spring-boot:run
-```
+Open [http://localhost:8888/index.html](http://localhost:8888/index.html).
 
-打开 [本地登录页面](http://localhost:8888/index.html)。
+Demo credentials, created by `database/seed-demo.sql`:
 
-演示账号仅适用于 `database/seed-demo.sql`：
+- Username: `admin`
+- Password: `ChangeMe123!`
+- Enter the verification code shown on the login page.
 
-- 用户名：`admin`
-- 密码：`ChangeMe123!`
-- 验证码：填写页面显示的图形验证码。
+Change the demo password after signing in.
 
-此账号是新建的本地演示账号，不是原始数据库中的账号。使用后请修改密码。
-
-### 5. 打包
+### 4. Build
 
 ```powershell
 .\mvnw.cmd -DskipTests package
 ```
 
-生成 `target/warehouse-0.0.1-SNAPSHOT.jar`。运行现有 Spring Boot 测试需要可连接的数据库和本地配置；跳过测试的打包不代表业务功能已通过测试。
+The output is `target/warehouse-0.0.1-SNAPSHOT.jar`. This command skips tests. Running the existing Spring Boot tests requires a reachable database and local configuration.
 
-## 项目结构
+## Project Structure
 
 ```text
-database/                          清理后的数据库结构与演示初始化数据
-src/main/java/com/yeqifu/bus/       商品、进货、销售、退货等业务
-src/main/java/com/yeqifu/sys/       用户、权限、公告、日志等系统功能
-src/main/resources/templates/     Thymeleaf 页面
-src/main/resources/static/        Layui、JavaScript、样式与图片资源
-src/main/resources/mapper/        MyBatis XML
-src/test/                         基础启动测试与代码生成工具
+database/                          Schema and demo seed data
+src/main/java/com/yeqifu/bus/       Products, purchases, sales, and returns
+src/main/java/com/yeqifu/sys/       Users, permissions, and administration
+src/main/resources/templates/     Thymeleaf pages
+src/main/resources/static/        JavaScript, CSS, images, and frontend libraries
+src/main/resources/mapper/        MyBatis XML files
+src/test/                         Basic tests and development utilities
 ```
 
-## 当前限制
+## Project Status
 
-- 客户删除页面发送 POST，后端仅接受 DELETE，尚需统一。
-- 部分库存操作仍需补齐后端数量检查、事务边界及并发扣减保护。
-- 菜单及按钮已有权限控制，业务接口的操作权限检查仍需完善。
-- 缓存是进程内的 HashMap，并非 Redis；部分数据库更新路径需要同步缓存。
-- 库存预警是首页查询显示，尚未接入邮件、短信或实时推送；预警超过五条时的首页显示逻辑需完善。
-- 原有依赖版本较旧，尚未进行生产环境安全加固。当前仓库用于学习和本地演示。
+This is a learning and demonstration project. Areas for improvement include server-side validation, operation-level API authorization, concurrent stock updates, transaction handling in sales and returns, and cache consistency. Customer deletion currently has an HTTP method mismatch between the page and the backend.
 
-## 来源与许可
+## Data and Attribution
 
-项目保留了现有源码中的作者标注，以及内置前端模板和第三方资源的许可说明。前端模板许可见 `src/main/resources/static/resources/LICENSE`。整理仓库不代表对已有代码和第三方资源重新声明原创或授予新的许可。
+Local configuration files, database passwords, the original database dump, uploaded files, and build output are excluded from Git. The initialization scripts do not include the original customer, contact, or user records.
 
-## GitHub 上传与在线运行
-
-本仓库用于托管源码。Spring Boot 和 MySQL 需要运行环境；上传到 GitHub 不会自动产生在线演示网站。
+Existing author notices and third-party licenses are retained. See the bundled frontend template [license](src/main/resources/static/resources/LICENSE).
